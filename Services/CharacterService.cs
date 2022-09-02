@@ -7,8 +7,10 @@ namespace dotnet_project.Services
 {
     public class CharacterService :ICharacterService
     {
-        
-     private static List<Character> characters = new List<Character>{
+
+
+       // CLASS VARIABLE
+       private static List<Character> characters = new List<Character>{
 
        new Character(),
 
@@ -16,7 +18,10 @@ namespace dotnet_project.Services
 
      };
 
-     public List<Character>  GetAllCharacters()
+        // CLASS METHODS
+
+
+        public List<Character>  GetAllCharacters()
      {
 
         return characters;
