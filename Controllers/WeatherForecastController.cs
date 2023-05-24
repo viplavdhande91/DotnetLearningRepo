@@ -24,6 +24,7 @@ namespace dotnet_project.Controllers
         }
 
         [HttpGet]
+        [MyActionFilter("ActionLevel")]
         public IEnumerable<WeatherForecast> Get()
         {
             var rng = new Random();
