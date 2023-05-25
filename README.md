@@ -25,7 +25,7 @@ Add-Migration InitialCreate
 
 ```
 
-#### 1.Command for Updation Model [Note: --force flag we have to add]
+#### Update Database
 ```
 Update-Database
 ```
