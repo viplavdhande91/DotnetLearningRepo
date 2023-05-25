@@ -1,55 +1,51 @@
-
+﻿using dotnet_project.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using dotnet_project.Models;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using dotnet_project.Services;
+using System.Threading.Tasks;
 namespace dotnet_project.Controllers
 {
-
-
+    [Route("api/[controller]")]
     [ApiController]
-    [Route("[controller]")]
-  
-  
-    public class CharacterController: ControllerBase
+
+
+    public class CharacterController : ControllerBase
     {
 
         private readonly ICharacterService _characterService;
 
         public CharacterController(ICharacterService characterService) //DEPENDENCY INJECTION
         {
-            this._characterService =characterService;
+            _characterService = characterService;
         }
-       
-     
-     
-     [HttpGet("getall")]
-     public IActionResult Get()
-     {
-
-        return Ok(_characterService.GetAllCharacters());
-     }
-
-     [HttpGet("{id}")]
-
-      public IActionResult GetSingle(int id)
-     {
-
-        return Ok(_characterService.GetCharacterById(id));
-     }
-
-      
-    
-    [HttpPost]
-        public IActionResult AddCharacter(Character newCharacter)
-     {
-         
-         return Ok(_characterService.AddCharacter(newCharacter));
-     }
 
 
 
+        [HttpGet("getCount")]
+        public IActionResult Get()
+        {
 
+            return Ok(_characterService.Get());
+        }
+
+
+
+    [HttpPost()]
+            
+     public IActionResult AddCharacter(int numberNew)
+    {
+
+        return Ok(_characterService.Add(numberNew));
     }
+
+
+
+
+        
+    
+}
+
 }
