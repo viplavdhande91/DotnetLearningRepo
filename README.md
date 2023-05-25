@@ -3,9 +3,7 @@
  
 
 
-## A)Creation and Installation of Packages[Using CLI]
-
-#### 1.
+#### 1. Creation and Installation of Packages[Using CLI]
 ```
 Microsoft.EntityFrameworkCore.Design
 
@@ -17,7 +15,7 @@ Microsoft.EntityFrameworkCore.Tools
 
 
 
-## B)Migrations
+## 2. Migrations
 
 #### Add Migration
 ```
