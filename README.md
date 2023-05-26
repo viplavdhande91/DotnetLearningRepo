@@ -28,4 +28,21 @@ Add-Migration InitialCreate
 Update-Database
 ```
 
+## 3. Stored Procedured
+
+#### With Parameters
+```
+       var result = await _context.Persons_.FromSqlRaw("EXEC SelectSpecificPerson {0}", personId.ToString()).ToListAsync();
+             
+            return Ok(result);
+```
+
+#### Without Parameters
+```
+     var result = await _context.Persons_.FromSqlRaw("SelectAllPersons").ToListAsync();
+
+            return Ok(result);
+```
+
+
 
