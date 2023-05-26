@@ -28,7 +28,7 @@ Add-Migration InitialCreate
 Update-Database
 ```
 
-## 3. Stored Procedured
+## 3. Stored Procedure
 
 #### With Parameters
 ```
