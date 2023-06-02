@@ -3,12 +3,12 @@
  Middleware plays a crucial role in the ASP.NET Core framework, allowing you to add additional components to the request processing pipeline. It offers a flexible and modular approach to handle various tasks such as authentication, logging, error handling, and more.
 
 ## Table of Contents
-- [Introduction to Middleware](#introduction-to-middleware)
-- [Middleware Execution Order](#middleware-execution-order)
-- [Creating Custom Middleware](#creating-custom-middleware)
-- [Configuring Middleware](#configuring-middleware)
-- [Useful Middleware Libraries](#useful-middleware-libraries)
-- [Conclusion](#conclusion)
+- Introduction to Middleware
+- Middleware Execution Order
+- Creating Custom Middleware]
+- Configuring Middleware
+- Useful Middleware Libraries](#useful-middleware-libraries
+- Conclusion
 
 ## Introduction to Middleware
 Middleware is software that sits between the server and the application and processes requests and responses. It intercepts HTTP requests and can perform operations like modifying the request or response, executing additional logic, or short-circuiting the pipeline. Middleware can be added to the pipeline in a specific order to form a sequence of components that handle the request and generate a response.
