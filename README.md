@@ -1,6 +1,6 @@
 # .NET Middleware Notes
 
-This readme file provides an overview of .NET middleware and its usage in building web applications. Middleware plays a crucial role in the ASP.NET Core framework, allowing you to add additional components to the request processing pipeline. It offers a flexible and modular approach to handle various tasks such as authentication, logging, error handling, and more.
+ Middleware plays a crucial role in the ASP.NET Core framework, allowing you to add additional components to the request processing pipeline. It offers a flexible and modular approach to handle various tasks such as authentication, logging, error handling, and more.
 
 ## Table of Contents
 - [Introduction to Middleware](#introduction-to-middleware)
