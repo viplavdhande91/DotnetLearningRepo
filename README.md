@@ -1,7 +1,7 @@
 # ASP.NET Core Filter Notes
 1. Filters are a powerful feature in ASP.NET Core that allow you to add cross-cutting concerns and perform certain actions at various stages of the request processing pipeline. 
 2. They help in implementing functionalities such as logging, exception handling, authorization, caching, and more.
-3. Before request hits to Controller we can process our Filters also on result PreProcessing we can execute our filter implmented.
+3. Before request hits to Controller we can process our Filters also on result PreProcessing we can execute our filter implemented.
 
 ## Table of Contents
 - [Overview](#overview)
