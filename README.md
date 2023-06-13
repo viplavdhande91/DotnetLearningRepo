@@ -23,13 +23,11 @@ ASP.NET Core filters are categorized into the following types:
 4. **Result filters**: Perform actions before and after the execution of the action result.
 
 # ARAER
-## Types of Filters
+## Types of Filters[Scope]
 1. **Global Filters**: Applied to all controllers and actions by default. Configured during application startup.
 2. **Controller Filters**: Applied to all actions within a specific controller or controller hierarchy.
 3. **Action Filters**: Applied to specific action methods.
-4. **Result Filters**: Applied to the result of an action method.
-5. **Exception Filters**: Handle exceptions thrown by action methods.
-6. **Resource Filters**: Applied to the entire request pipeline.
+
 
 ## Usage
 To use filters in ASP.NET Core, you can apply them at **various levels** depending on your requirements. You can use **attributes** to apply filters directly to controllers or action methods. Additionally, you can register filters globally during application startup using the `AddMvc` or `AddControllers` methods.
@@ -79,7 +77,7 @@ services.AddControllers(options =>
 ```
 
 ## Ordering Filters
-Filters can be ordered to control the execution order. The execution order is determined by the filter scope and the filter type. Global filters execute first, followed by controller filters, and then action filters. Within each scope, the order is determined by the filter's `Order` property[As of now we have not implemented that].
+Filters can be ordered to control the execution order. The execution order is determined by the filter scope and the filter type. Global filters execute first, followed by controller filters, and then action filters. Within each scope, the order is determined by the filter's `Order` property [As of now we have not implemented that].
 
 ## Filter Execution
 The **order of execution[As per Microsoft Official Documentation]** for filters is as follows:
@@ -102,5 +100,7 @@ The **order of execution[As per Microsoft Official Documentation]** for filters 
 - [Rahul nath video-1](https://www.youtube.com/watch?v=mKM6FbxMGI8&list=PL59L9XrzUa-nqfCHIKazYMFRKapPNI4sP&index=25&pp=iAQB&ab_channel=RahulNath)
 
 - [Rahul nath video-2](https://www.youtube.com/watch?v=kqwjrJ4kb9Q&list=PL59L9XrzUa-nqfCHIKazYMFRKapPNI4sP&index=26&ab_channel=RahulNath)
+
+- [Notes ppt] (https://drive.google.com/drive/folders/1tm1091K5-R370SmGFC9qVIe-GsCkY2S-?usp=sharing)
 
 
