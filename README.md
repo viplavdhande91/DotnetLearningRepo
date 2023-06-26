@@ -25,7 +25,7 @@
 
 ### Notes
 
-- As far as I know, the Singleton is normally used for a **global single instance**. For example, you will have an image store service you could have a service to load images from a given location and keeps them in memory for future use.
+- As far as I know, the Singleton is normally used for a **global single instance**. For example, you will have an **image store service** you could have a service to load images from a given location and keeps them in memory for future use.
 
 - A scoped lifetime indicates that services are created once per client request. Normally we will use this for **SQL connection. It means it will create and dispose the sql connection per request.**
 
