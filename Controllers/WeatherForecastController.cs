@@ -13,6 +13,7 @@ namespace dotnet_project.Controllers
 
         private readonly ILogger<WeatherForecastController> _logger;
 
+
         public WeatherForecastController(ILogger<WeatherForecastController> logger)
         {
             _logger = logger;
@@ -21,6 +22,7 @@ namespace dotnet_project.Controllers
         [HttpGet]
         public IEnumerable<WeatherForecast> Get()
         {
+
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
                 Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
@@ -29,5 +31,7 @@ namespace dotnet_project.Controllers
             })
             .ToArray();
         }
+
+
     }
 }
