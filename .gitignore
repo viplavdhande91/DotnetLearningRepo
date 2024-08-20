@@ -3,5 +3,17 @@
 ################################################################################
 
 /.vs
-/obj
-/bin/Debug/net8.0
+/src/Company.FutureProject.Core/obj
+/src/Company.FutureProject.Infrastructure/obj
+/src/Company.FutureProject.UseCases/obj
+/src/Company.FutureProject.Web/obj
+/tests/Company.FutureProject.IntegrationTests/obj
+/tests/Company.FutureProject.UnitTests/obj
+/tests/Company.FutureProject.FunctionalTests/obj
+/src/Company.FutureProject.Infrastructure/bin/Debug/net8.0
+/src/Company.FutureProject.Web/bin/Debug/net8.0
+/tests/Company.FutureProject.UnitTests/bin/Debug/net8.0
+/tests/Company.FutureProject.IntegrationTests/bin/Debug/net8.0
+/tests/Company.FutureProject.FunctionalTests/bin/Debug/net8.0
+/src/Company.FutureProject.UseCases/bin/Debug/net8.0
+/src/Company.FutureProject.Core/bin/Debug/net8.0
