@@ -29,5 +29,30 @@ namespace dotnet_project.Controllers
             })
             .ToArray();
         }
+
+
+        //public async Task<string> GetDataWithTimeoutAsync(TimeSpan timeout)
+        //{
+        //    var tcs = new TaskCompletionSource<string>();
+
+        //    // Simulate async work
+        //    var workTask = Task.Run(async () =>
+        //    {
+        //        await Task.Delay(5000); // Simulating long-running task
+        //        tcs.TrySetResult("Data retrieved");
+        //    });
+
+        //    if (await Task.WhenAny(workTask, Task.Delay(timeout)) == workTask)
+        //    {
+        //        return await tcs.Task; // The workTask completed within timeout
+        //    }
+        //    else
+        //    {
+        //        tcs.TrySetCanceled(); // Timeout occurred
+        //        throw new TimeoutException("The operation timed out.");
+        //    }
+        //}
+
+
     }
 }
