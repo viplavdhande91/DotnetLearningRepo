@@ -2,7 +2,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers();  //IMPORTANT FOR ROUTING
 
 var app = builder.Build();
 
@@ -12,6 +12,6 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers(); //IMPORTANT FOR ROUTING
 
 app.Run();
