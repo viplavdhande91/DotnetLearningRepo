@@ -198,25 +198,71 @@ Invalid input should return 400, not 404.
 
 ---
 
-# 📌 7️⃣ Route Precedence Rules (Interview Critical)
 
-Routing chooses the most specific match.
+# 📌 7️⃣ Route Precedence (How .NET Chooses Between Multiple Routes)
 
-Priority:
+## 🔎 What Problem Does This Solve?
+
+When multiple routes match the same URL, how does ASP.NET Core decide which one to execute?
+
+---
+
+## ✅ Example 1 – Literal vs Parameter
+
+```csharp
+app.MapGet("/hello", () => "Hello literal");
+app.MapGet("/{message}", (string message) => $"Message: {message}");
+```
+
+Request:
+
+```
+GET /hello
+```
+
+Both routes technically match:
+
+- `/hello` ✅
+- `/{message}` where message = "hello" ✅
+
+### Which one runs?
+
+👉 `/hello` runs.
+
+### Why?
+
+Because literal segments have higher precedence than parameter segments.
+
+---
+
+## ✅ Example 2 – Literal vs Constrained Parameter
+
+```csharp
+app.MapGet("/users/list", () => "List of users");
+app.MapGet("/users/{id:int}", (int id) => $"User {id}");
+```
+
+Request:
+
+```
+GET /users/list
+```
+
+- `/users/list` matches literal route ✅
+- `/users/{id:int}` does NOT match because "list" is not int ❌
+
+Literal wins again.
+
+---
+
+## 🏆 Route Precedence Rules
+
+Priority order:
 
 1. More segments → Higher priority
 2. Literal segment > Parameter segment
 3. Parameter with constraint > Without constraint
 4. Catch-all is lowest priority
-
-Example:
-
-```
-/hello
-/{message}
-```
-
-`/hello` wins.
 
 ---
 
@@ -233,36 +279,64 @@ If multiple endpoints have same priority → Ambiguous match exception.
 
 ---
 
-# 📌 9️⃣ Endpoint Metadata (VERY IMPORTANT)
+# 📌 9️⃣ Endpoint Metadata
 
-Each endpoint contains:
+## 🔎 What is Endpoint Metadata?
 
-- RequestDelegate (what executes)
-- Metadata collection (authorization, filters, CORS, etc.)
+Every endpoint contains:
 
-Example:
+- RequestDelegate (code to execute)
+- Metadata (extra information attached to endpoint)
+
+Metadata can include:
+
+- Authorization
+- CORS
+- Filters
+- Custom attributes
+
+---
+
+## ✅ Example – Authorization Metadata
 
 ```csharp
-app.MapGet("/health", () => "OK")
-   .RequireAuthorization()
-   .WithMetadata(new MyCustomMetadata());
+app.MapGet("/secure", () => "Secret Data")
+   .RequireAuthorization();
 ```
 
-Access metadata:
+The `/secure` endpoint now has Authorization metadata attached.
+
+---
+
+## 🔍 How Middleware Uses Metadata
 
 ```csharp
 app.Use(async (context, next) =>
 {
     var endpoint = context.GetEndpoint();
 
-    if (endpoint?.Metadata.GetMetadata<RequiresAuditAttribute>() != null)
+    if (endpoint?.Metadata.GetMetadata<IAuthorizeData>() != null)
     {
-        Console.WriteLine("Audit required.");
+        Console.WriteLine("This endpoint requires authorization.");
     }
 
     await next();
 });
 ```
+
+### Flow:
+
+1. Routing selects endpoint.
+2. Middleware reads metadata.
+3. Middleware applies behavior (auth, cors, etc.).
+
+---
+
+## 🧠 Key Idea
+
+Routing is metadata-driven.
+
+Middleware between routing and endpoint execution can inspect endpoint metadata and apply policies.
 
 ---
 
@@ -323,165 +397,201 @@ If controller changes → id is invalidated.
 
 # 📌 1️⃣2️⃣ Route Groups (.NET 7+)
 
-Group endpoints with shared prefix and metadata.
+## 🔎 Problem Without Groups
 
 ```csharp
-app.MapGroup("/admin")
-   .RequireAuthorization()
-   .MapGet("/users", () => "Admin Users");
+app.MapGet("/admin/users", GetUsers).RequireAuthorization();
+app.MapPost("/admin/users", CreateUser).RequireAuthorization();
+app.MapDelete("/admin/users/{id}", DeleteUser).RequireAuthorization();
 ```
 
-Benefits:
+Repeated prefix + repeated authorization.
 
-- Cleaner organization
-- Shared auth
-- Shared filters
-- Shared metadata
+---
+
+## ✅ Using Route Groups
+
+```csharp
+var adminGroup = app.MapGroup("/admin")
+                    .RequireAuthorization();
+
+adminGroup.MapGet("/users", GetUsers);
+adminGroup.MapPost("/users", CreateUser);
+adminGroup.MapDelete("/users/{id}", DeleteUser);
+```
+
+Now:
+
+- All routes start with `/admin`
+- All require authorization
+- Cleaner and maintainable
+
+---
+
+## 🔥 Example – Multi-Tenant API
+
+```csharp
+app.MapGroup("/tenant/{tenantId}")
+   .RequireAuthorization()
+   .MapGet("/users", (string tenantId) =>
+   {
+       return $"Users for tenant {tenantId}";
+   });
+```
+
+Request:
+
+```
+GET /tenant/abc/users
+```
+
+Response:
+
+```
+Users for tenant abc
+```
+
+---
+
+## 🧠 Mental Model
+
+Route Group = Folder for endpoints with shared configuration.
 
 ---
 
 # 📌 1️⃣3️⃣ ShortCircuit()
 
-Executes endpoint immediately without running remaining middleware.
+## 🔎 What Problem Does This Solve?
+
+Normally request goes through full middleware pipeline:
+
+- Logging
+- CORS
+- Authentication
+- Authorization
+- Custom middleware
+- Endpoint
+
+Sometimes we want to execute endpoint immediately.
+
+---
+
+## ✅ Example
 
 ```csharp
-app.MapGet("/fast", () => "Fast")
+app.MapGet("/fast", () => "Fast response")
    .ShortCircuit();
 ```
 
-Useful for:
-- Health checks
-- robots.txt
-- favicon.ico
+Now:
+
+- `/fast` executes immediately
+- Skips remaining middleware
+- Improves performance
+
+---
+
+## ✅ Example – Ignore Bots
+
+```csharp
+app.MapShortCircuit(404, "robots.txt", "favicon.ico");
+```
+
+Requests to:
+
+```
+/robots.txt
+/favicon.ico
+```
+
+Immediately return 404 without running full pipeline.
+
+---
+
+## ⚠ Important
+
+Cannot use `.ShortCircuit()` with:
+
+- RequireAuthorization
+- RequireCors
+
+Because those rely on middleware execution.
 
 ---
 
 # 📌 1️⃣4️⃣ Catch-All Parameters
 
+## 🔎 Problem
+
+Normal parameter:
+
 ```csharp
-blog/{**slug}
+app.MapGet("/files/{name}", (string name) => name);
 ```
 
-- Matches everything after blog/
-- Can include slashes
+Matches:
 
-Single `*` escapes slashes  
-Double `**` preserves slashes
+```
+/files/test
+```
+
+But NOT:
+
+```
+/files/folder1/test
+```
 
 ---
 
-# 📌 1️⃣5️⃣ Custom Route Constraints
+## ✅ Catch-All Parameter
 
 ```csharp
-public class NoZeroesRouteConstraint : IRouteConstraint
-{
-    public bool Match(...)
-    {
-        return !values[routeKey].ToString().Contains("0");
-    }
-}
+app.MapGet("/files/{*path}", (string path) => path);
 ```
 
-Register:
+Now matches:
+
+```
+/files/folder1/test
+```
+
+Value of `path`:
+
+```
+folder1/test
+```
+
+---
+
+## ✅ Double Asterisk Version
 
 ```csharp
-builder.Services.AddRouting(options =>
+app.MapGet("/files/{**path}", (string path) => path);
+```
+
+Used when generating URLs and preserving slashes.
+
+---
+
+## 🔥 Real Use Case – Static File Style Routing
+
+```csharp
+app.MapGet("/static/{**filepath}", (string filepath) =>
 {
-    options.ConstraintMap.Add("noZeroes", typeof(NoZeroesRouteConstraint));
+    return $"Requested file: {filepath}";
 });
 ```
 
----
+Request:
 
-# 📌 1️⃣6️⃣ Performance Guidance
-
-Potentially expensive features:
-
-- Complex regex
-- Complex segments ({x}-{y}-{z})
-- Large route tables with early parameters
-- Synchronous DB access during routing
-
-Best practices:
-
-- Use constraints
-- Move parameters to later segments
-- Avoid `{param}/literal` in large route tables
-
-Routing is highly optimized and rarely the bottleneck.
-
----
-
-# 📌 1️⃣7️⃣ Debugging Routing
-
-Enable detailed logs:
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Microsoft": "Debug"
-    }
-  }
-}
+```
+/static/images/logo.png
 ```
 
-Inspect endpoint:
+Response:
 
-```csharp
-var endpoint = context.GetEndpoint();
+```
+Requested file: images/logo.png
 ```
 
 ---
-
-# 📌 1️⃣8️⃣ REST Best Practices
-
-Good:
-
-```
-GET    /api/users
-POST   /api/users
-GET    /api/users/5
-DELETE /api/users/5
-```
-
-Avoid:
-
-```
-GET /api/getUserById
-POST /api/createUser
-```
-
----
-
-# 📌 1️⃣9️⃣ Senior-Level Summary
-
-✔ Endpoint routing is metadata-driven  
-✔ Routing is separated into matching & execution  
-✔ Middleware can inspect endpoints  
-✔ Route precedence determines best match  
-✔ LinkGenerator handles URL creation  
-✔ Route groups simplify organization  
-✔ ShortCircuit improves performance  
-
----
-
-# 🎯 Final Recommendation for Production APIs
-
-Use:
-
-- Attribute Routing
-- Route constraints
-- API versioning
-- Route groups
-- LinkGenerator
-- Metadata-driven policies
-
-Avoid:
-
-- Verb-based URLs
-- Deeply nested routes
-- Custom terminal middleware when routing can solve it
-
----
-
