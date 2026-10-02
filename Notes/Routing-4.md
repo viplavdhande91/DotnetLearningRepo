@@ -43,36 +43,215 @@ app.MapGet("/secure", () => "Secret Data")
    
    ```
 ---
-# 📌 🔟 URL Generation (LinkGenerator)
+Ah, understood. You mean **you haven't understood Point 10 — URL Generation / `LinkGenerator`**. Let's learn that from the beginning, very simply.
 
-Modern URL generation API:
+# 📌 10️⃣ URL Generation — `LinkGenerator`
+
+The basic idea is:
+
+> **Routing is not only about receiving URLs. ASP.NET Core can also generate URLs for you.**
+
+For example, suppose you have this API:
 
 ```csharp
-
-public class MyService
+[HttpGet("users/{id}")]
+public IActionResult GetUser(int id)
 {
+    return Ok();
+}
+```
 
-    private readonly LinkGenerator _linkGenerator;
+The route is:
 
-    public MyService(LinkGenerator linkGenerator)
+```text
+/users/10
+```
+
+Instead of manually writing:
+
+```csharp
+"/users/10"
+```
+
+ASP.NET Core can **generate the URL for you** using routing information.
+
+---
+
+## 🔹 What is `LinkGenerator`?
+
+`LinkGenerator` is an ASP.NET Core service used to **generate URLs from endpoints/routes**.
+
+Think:
+
+```text
+Route Definition
+       ↓
+LinkGenerator
+       ↓
+Generated URL
+```
+
+For example:
+
+```text
+Route: /users/{id}
+
+id = 10
+
+       ↓
+
+/users/10
+```
+
+---
+
+# 🔹 Why do we need it?
+
+Imagine your application has:
+
+```text
+/api/users/{id}
+```
+
+Today it might be:
+
+```text
+/api/users/10
+```
+
+Tomorrow you change the route to:
+
+```text
+/api/v2/users/{id}
+```
+
+If your code contains:
+
+```csharp
+"/api/users/10"
+```
+
+you have to manually update it.
+
+But if you generate the URL using routing:
+
+```csharp
+LinkGenerator
+```
+
+ASP.NET Core can use the route definition to generate the correct URL.
+
+### 🧠 Simple idea
+
+**Don't hard-code URLs when ASP.NET Core can generate them from routing information.**
+
+---
+
+# 🔹 Example
+
+Suppose you have a controller:
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class UsersController : ControllerBase
+{
+    [HttpGet("{id}")]
+    public IActionResult GetById(int id)
     {
-        _linkGenerator = linkGenerator;
-    }
-
-    public string Generate()
-    {
-
-        return _linkGenerator.GetPathByAction(
-
-            "GetById",
-            "Users",
-            new { id = 10 });
+        return Ok(id);
     }
 }
 ```
 
-Methods:
-### LinkGenerator Methods
+The route is:
+
+```text
+/api/users/{id}
+```
+
+We want to generate:
+
+```text
+/api/users/10
+```
+
+Using:
+
+```csharp
+LinkGenerator
+```
+
+---
+
+# 🔹 `GetPathByAction()`
+
+One common method is:
+
+```csharp
+_linkGenerator.GetPathByAction(
+    "GetById",
+    "Users",
+    new { id = 10 });
+```
+
+Here:
+
+```text
+"GetById"
+     ↓
+Action
+
+"Users"
+     ↓
+Controller
+
+new { id = 10 }
+     ↓
+Route value
+```
+
+ASP.NET Core uses this information to find the appropriate route and generate a path.
+
+Conceptually:
+
+```text
+Controller = Users
+Action     = GetById
+id         = 10
+
+        ↓
+
+LinkGenerator
+
+        ↓
+
+/api/users/10
+```
+
+---
+
+# 🔹 Path vs URI
+
+This is very important for interviews.
+
+### `GetPath...`
+
+Returns a **path**:
+
+```text
+/api/users/10
+```
+
+### `GetUri...`
+
+Returns an **absolute URI**:
+
+```text
+https://example.com/api/users/10
+```
+
+So:
 
 | Method            | Returns         |
 | ----------------- | --------------- |
@@ -81,8 +260,107 @@ Methods:
 | `GetPathByPage`   | Razor Page path |
 | `GetUriByPage`    | Absolute URI    |
 
+---
+
+# 🔹 `GetPathByAction` vs `GetPathByName`
+
+There's another important concept for interviews.
+
+You can generate URLs using an **action/controller**:
+
+```csharp
+GetPathByAction(...)
+```
+
+or using a **named endpoint**:
+
+```csharp
+GetPathByName(...)
+```
+
+For example:
+
+```csharp
+app.MapGet("/users/{id}", (int id) => ...)
+   .WithName("GetUser");
+```
+
+Now you can generate its URL by name:
+
+```csharp
+var path = linkGenerator.GetPathByName(
+    httpContext,
+    "GetUser",
+    new { id = 10 });
+```
+
+Conceptually:
+
+```text
+Endpoint name = GetUser
+id = 10
+
+       ↓
+
+/users/10
+```
+
+This is often very useful because the URL structure can change without requiring callers to know the route template.
 
 ---
+
+# 🧠 The easiest way to remember Point 10
+
+Think about routing in **two directions**:
+
+### Incoming request
+
+```text
+URL
+ ↓
+Routing
+ ↓
+Endpoint
+```
+
+Example:
+
+```text
+GET /users/10
+       ↓
+GetById(10)
+```
+
+### URL generation
+
+```text
+Endpoint + Route Values
+ ↓
+LinkGenerator
+ ↓
+URL
+```
+
+Example:
+
+```text
+GetUser + id=10
+       ↓
+LinkGenerator
+       ↓
+/users/10
+```
+
+So:
+
+> **Routing matches URLs to endpoints. `LinkGenerator` does the reverse: it generates URLs from endpoint routing information.**
+
+### ⭐ Interview answer
+
+> **`LinkGenerator` is an ASP.NET Core service used to generate URLs based on the application's endpoint routing configuration. It can generate paths or absolute URIs using actions, Razor Pages, or named endpoints together with route values.**
+
+That is the **core concept you need to understand for Point 10**.
+
 
 # 📌 1️⃣1️⃣ Ambient vs Explicit Route Values
 
