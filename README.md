@@ -203,27 +203,36 @@ Invalid input should return 400, not 404.
 
 ## 🔎 What Problem Does This Solve?
 
-When multiple routes match the same URL, how does ASP.NET Core decide which one to execute?
+When multiple endpoints can match the same URL, how does ASP.NET Core determine which endpoint should execute?
+
+ASP.NET Core uses **endpoint routing** to match the request against route patterns and select the best matching endpoint.
 
 ---
 
-## ✅ Example 1 – Literal vs Parameter
+## 🧠 Key Concept: Route Specificity
+
+Route precedence is primarily about **how specific a route pattern is**.
+
+A more specific route pattern takes precedence over a more general pattern.
+
+For example:
 
 ```csharp
 app.MapGet("/hello", () => "Hello literal");
+
 app.MapGet("/{message}", (string message) => $"Message: {message}");
 ```
 
 Request:
 
-```
+```text
 GET /hello
 ```
 
-Both routes technically match:
+Both endpoints can match:
 
-- `/hello` ✅
-- `/{message}` where message = "hello" ✅
+* `/hello` → literal match ✅
+* `/{message}` → parameter match, `message = "hello"` ✅
 
 ### Which one runs?
 
@@ -231,40 +240,193 @@ Both routes technically match:
 
 ### Why?
 
-Because literal segments have higher precedence than parameter segments.
-
----
-
-## ✅ Example 2 – Literal vs Constrained Parameter
-
-```csharp
-app.MapGet("/users/list", () => "List of users");
-app.MapGet("/users/{id:int}", (int id) => $"User {id}");
-```
-
-Request:
-
-```
-GET /users/list
-```
-
-- `/users/list` matches literal route ✅
-- `/users/{id:int}` does NOT match because "list" is not int ❌
-
-Literal wins again.
+Because a **literal segment is more specific than a parameter segment**.
 
 ---
 
 ## 🏆 Route Precedence Rules
 
-Priority order:
+For interview purposes, remember the general specificity order:
 
-1. More segments → Higher priority
-2. Literal segment > Parameter segment
-3. Parameter with constraint > Without constraint
-4. Catch-all is lowest priority
+1. **Literal segment**
+2. **Constrained parameter**
+3. **Unconstrained parameter**
+4. **Catch-all parameter**
+
+In other words:
+
+```text
+Literal
+   ↓
+Constrained parameter
+   ↓
+Unconstrained parameter
+   ↓
+Catch-all
+```
+
+### Example
+
+```csharp
+app.MapGet("/products/list", () => "List");
+
+app.MapGet("/products/{id:int}", (int id) => $"Product {id}");
+
+app.MapGet("/products/{name}", (string name) => $"Name {name}");
+
+app.MapGet("/products/{*path}", (string path) => $"Catch-all: {path}");
+```
+
+For:
+
+```text
+GET /products/list
+```
+
+Potential matches:
+
+```text
+/products/list       → Literal
+/products/{id:int}   → Does NOT match ("list" is not an int)
+/products/{name}     → Parameter match
+/products/{*path}    → Catch-all match
+```
+
+Therefore:
+
+```text
+/products/list
+```
+
+is selected because the literal route is more specific.
 
 ---
+
+## ✅ Example 2 – Constrained vs Unconstrained Parameter
+
+```csharp
+app.MapGet("/users/{id:int}", (int id) => $"User ID: {id}");
+
+app.MapGet("/users/{value}", (string value) => $"Value: {value}");
+```
+
+Request:
+
+```text
+GET /users/123
+```
+
+Both routes can match:
+
+```text
+/users/{id:int}   → id = 123
+/users/{value}    → value = "123"
+```
+
+The constrained route is more specific:
+
+```text
+/users/{id:int}
+```
+
+Therefore, the `int`-constrained endpoint takes precedence over the unconstrained parameter endpoint.
+
+---
+
+## ⚠️ Important: "More Segments = Higher Priority" Is NOT a General Rule
+
+Do **not** memorize this:
+
+```text
+More segments → Higher priority
+```
+
+That is an oversimplification.
+
+For example:
+
+```text
+/{id}
+```
+
+and:
+
+```text
+/products/{id}
+```
+
+have different route shapes and normally do not compete for the same URL.
+
+The important interview concept is:
+
+> **Route precedence is based on route-pattern specificity, not simply on the number of segments.**
+
+---
+
+## ⚠️ What If Two Routes Have the Same Precedence?
+
+If multiple endpoints match and routing cannot determine a single best endpoint, ASP.NET Core can report an **ambiguous match** rather than arbitrarily choosing one.
+
+Example:
+
+```csharp
+app.MapGet("/users/{id}", () => "Route 1");
+
+app.MapGet("/users/{name}", () => "Route 2");
+```
+
+Request:
+
+```text
+GET /users/123
+```
+
+Both patterns have essentially the same precedence.
+
+There is no meaningful distinction between `{id}` and `{name}` for routing purposes.
+
+This can result in an:
+
+```text
+AmbiguousMatchException
+```
+
+---
+
+## 🧠 Interview Mental Model
+
+Think of route matching like this:
+
+```text
+Incoming Request
+       ↓
+Match route patterns
+       ↓
+Apply route constraints
+       ↓
+Apply routing policies
+       ↓
+Choose the best/specific endpoint
+       ↓
+Execute endpoint
+```
+
+### Remember:
+
+```text
+Literal
+   >
+Constrained parameter
+   >
+Unconstrained parameter
+   >
+Catch-all
+```
+
+### ⭐ Interview Answer
+
+> **ASP.NET Core endpoint routing can have multiple endpoints matching the same URL. Route precedence favors more specific route patterns: literal segments are more specific than constrained parameters, constrained parameters are more specific than unconstrained parameters, and catch-all parameters have lower precedence. If multiple endpoints remain equally valid, endpoint selection can result in an ambiguous match rather than arbitrarily choosing one.**
+
 
 # 📌 8️⃣ URL Matching Phases
 
