@@ -16,76 +16,33 @@ If multiple endpoints have same priority → Ambiguous match exception.
 
 # 📌 9️⃣ Endpoint Metadata
 
-🔎 What is Endpoint Metadata?
-An ASP.NET Core endpoint contains information that describes what should execute and how the endpoint should be treated.
+## 🔎 What is Endpoint Metadata?
 
-An endpoint commonly has:
+**Endpoint metadata** is information attached to an endpoint that tells ASP.NET Core how that endpoint should be treated.
 
-RequestDelegate → code that executes the endpoint
-Metadata → information attached to the endpoint
-Metadata can describe things such as:
+An endpoint commonly contains:
 
-Authorization requirements
-CORS requirements
-HTTP methods
-Endpoint names
-Custom application metadata
-Framework-specific endpoint information
-✅ Example – Authorization Metadata
-app.MapGet("/secure", () => "Secret Data")
-   .RequireAuthorization();
+- `RequestDelegate` → code that executes
+- `Metadata` → information about the endpoint
 
-The endpoint receives authorization-related metadata.
+Metadata can include:
 
-Authorization middleware can use this metadata to determine that the endpoint requires authorization.
-
-🔍 Reading Endpoint Metadata
-Middleware can inspect the selected endpoint:
-
-app.Use(async (context, next) =>
-{
-    var endpoint = context.GetEndpoint();
-
-    if (endpoint?.Metadata.GetMetadata<IAuthorizeData>() != null)
-    {
-        Console.WriteLine("This endpoint requires authorization.");
-    }
-
-    await next();
-});
-
-⚠️ Important
-GetEndpoint() returns the endpoint selected by routing.
-
-Therefore, middleware that wants to inspect endpoint metadata must run after endpoint routing has selected an endpoint.
-
-Flow
-HTTP Request
-     ↓
-Routing selects endpoint
-     ↓
-HttpContext.GetEndpoint()
-     ↓
-Middleware reads endpoint metadata
-     ↓
-Middleware/framework applies relevant policies
-     ↓
-Endpoint executes
-
-🧠 Key Idea
-Endpoint metadata is declarative information attached to an endpoint. Routing selects the endpoint, and middleware/framework components can inspect its metadata to apply behavior or policies.
-
-⭐ Interview Example
-If asked:
-
-"How does authorization know that /secure requires authorization?"
-
-A good answer is:
-
-RequireAuthorization() adds authorization metadata to the endpoint. After routing selects that endpoint, the authorization middleware reads the endpoint's metadata and performs authorization.
+- Authorization requirements
+- CORS requirements
+- HTTP methods
+- Endpoint names
+- Custom application metadata
 
 ---
 
+## ✅ Example – Authorization Metadata
+
+```csharp
+app.MapGet("/secure", () => "Secret Data")
+   .RequireAuthorization();
+   
+   ```
+---
 # 📌 🔟 URL Generation (LinkGenerator)
 
 Modern URL generation API:
@@ -93,31 +50,23 @@ Modern URL generation API:
 ```csharp
 
 public class MyService
-
 {
 
     private readonly LinkGenerator _linkGenerator;
 
     public MyService(LinkGenerator linkGenerator)
-
     {
-
         _linkGenerator = linkGenerator;
-
     }
 
     public string Generate()
-
     {
 
         return _linkGenerator.GetPathByAction(
 
             "GetById",
-
             "Users",
-
             new { id = 10 });
-
     }
 }
 ```
@@ -135,25 +84,26 @@ Methods:
 
 ---
 
-Here is the **entire Point 11**, properly formatted as Markdown and optimized for interview preparation:
-
 # 📌 1️⃣1️⃣ Ambient vs Explicit Route Values
 
-When ASP.NET Core generates URLs, it can use route values from two sources:
+When ASP.NET Core generates a URL, route values can come from:
+
+- **Ambient values** → values from the current request
+- **Explicit values** → values provided by the caller
 
 ---
 
 ## 🔹 Ambient Values
 
-**Ambient values** are route values already associated with the current request.
+Ambient values come from the current route.
 
-For example, if the current route is:
+For example:
 
 ```text
 /products/details/10
 ````
 
-The current route values may contain:
+Current route values:
 
 ```text
 controller = Products
@@ -161,13 +111,13 @@ action     = Details
 id         = 10
 ```
 
-These values can be reused during URL generation when appropriate.
+ASP.NET Core can reuse these values during URL generation when appropriate.
 
 ---
 
 ## 🔹 Explicit Values
 
-**Explicit values** are values supplied directly to the URL-generation API.
+Explicit values are provided directly when generating the URL.
 
 Example:
 
@@ -186,23 +136,21 @@ action     = Details
 id         = 20
 ```
 
-are explicitly supplied for URL generation.
+are explicit values.
 
 ---
 
-## 🧠 Ambient Value Invalidation
+## 🧠 Important Rule
 
-A useful rule for interview purposes:
+> **Changing an earlier route value can invalidate later ambient values.**
 
-> **When generating a URL, changing a value earlier in the route can invalidate dependent ambient values that appear later in the route.**
-
-Example template:
+Example:
 
 ```text
 {controller}/{action}/{id?}
 ```
 
-Suppose the current request has:
+Current values:
 
 ```text
 controller = Products
@@ -210,21 +158,15 @@ action     = Details
 id         = 10
 ```
 
-If URL generation changes:
+If we change:
 
 ```text
 controller = Orders
 ```
 
-the existing ambient:
+the existing ambient `id = 10` should not automatically be carried over.
 
-```text
-id = 10
-```
-
-should not automatically be assumed to belong to the new controller/action combination.
-
-This prevents unrelated route values from being carried forward incorrectly.
+This prevents unrelated route values from being reused.
 
 ---
 
@@ -238,12 +180,12 @@ var path = linkGenerator.GetPathByAction(
     values: null);
 ```
 
-The URL-generation system considers both:
+ASP.NET Core considers:
 
-* Explicit route values
-* Compatible ambient route values
+* Explicit values
+* Compatible ambient values
 
-when finding a route.
+to generate the URL.
 
 ---
 
@@ -252,9 +194,9 @@ when finding a route.
 ```text
 Current Request
       ↓
-Ambient Route Values
-      ↓
-+ Explicit Route Values
+Ambient Values
+      +
+Explicit Values
       ↓
 URL Generation
       ↓
@@ -265,10 +207,11 @@ Generated URL
 
 ## ⭐ Interview Answer
 
-> **Ambient route values come from the current request and can be reused during URL generation. Explicit route values are values supplied by the caller. When explicit values change earlier route parameters, dependent ambient values may no longer be valid and aren't blindly carried forward.**
+> **Ambient route values come from the current request, while explicit route values are provided by the caller. ASP.NET Core can reuse compatible ambient values during URL generation, but changing an earlier route value can invalidate later ambient values.**
 
 
----
+
+
 
 # 📌 1️⃣2️⃣ Route Groups (.NET 7+)
 
@@ -342,11 +285,8 @@ GET /tenant/abc/users
 
 Response:
 
-```
-
 Users for tenant abc
 
-```
 
 ---
 
@@ -354,6 +294,3 @@ Users for tenant abc
 
 Route Group = Folder for endpoints with shared configuration.
 
----
-
-Here is the **entire Point 13**, properly formatted as Markdown and optimized for interview preparation:
