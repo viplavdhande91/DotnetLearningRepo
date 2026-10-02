@@ -1,4 +1,4 @@
-# 📌 1️⃣3️⃣ ShortCircuit()
+# 📌 1️⃣1️⃣ ShortCircuit()
 
 ## 🔎 What Problem Does This Solve?
 
@@ -100,7 +100,7 @@ you should not assume those middleware-based policies will execute normally when
 
 ---
 
-# 📌 1️⃣4️⃣ Catch-All Parameters
+# 📌 1️⃣2️⃣ Catch-All Parameters
 
 ## 🔎 Problem
 
