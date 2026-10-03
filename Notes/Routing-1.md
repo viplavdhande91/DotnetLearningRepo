@@ -1,4 +1,4 @@
-# 🚀 Routing in ASP.NET (.NET 6 / 7 / 8)
+# 🚀 Routing in .NET (.NET 6 / 7 / 8)
 
 This guide covers complete routing concepts in modern ASP.NET Core using the **Minimal Hosting Model**.
 
