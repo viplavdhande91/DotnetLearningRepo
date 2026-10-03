@@ -261,42 +261,6 @@ Therefore, the `int`-constrained endpoint takes precedence over the unconstraine
 
 ---
 
-## ⚠️ Important: "More Segments = Higher Priority" Is NOT a General Rule
-
-Do **not** memorize this:
-
-```text
-
-More segments → Higher priority
-
-```
-
-That is an oversimplification.
-
-For example:
-
-```text
-
-/{id}
-
-```
-
-and:
-
-```text
-
-/products/{id}
-
-```
-
-have different route shapes and normally do not compete for the same URL.
-
-The important interview concept is:
-
-> **Route precedence is based on route-pattern specificity, not simply on the number of segments.**
-
----
-
 ## ⚠️ What If Two Routes Have the Same Precedence?
 
 If multiple endpoints match and routing cannot determine a single best endpoint, ASP.NET Core can report an **ambiguous match** rather than arbitrarily choosing one.
