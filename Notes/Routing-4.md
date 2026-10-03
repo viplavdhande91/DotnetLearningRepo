@@ -43,8 +43,6 @@ app.MapGet("/secure", () => "Secret Data")
    
    ```
 ---
-Ah, understood. You mean **you haven't understood Point 10 — URL Generation / `LinkGenerator`**. Let's learn that from the beginning, very simply.
-
 
 # 📌 1️⃣0️⃣ Route Groups (.NET 7+)
 
