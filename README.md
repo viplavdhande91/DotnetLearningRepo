@@ -34,14 +34,20 @@ Typical uses: authentication, authorization, logging, error handling, CORS, cach
 
 Think of the pipeline as nested layers (an onion). A request travels **inward** through each component, and the response travels back **outward** in reverse order.
 
-```mermaid
-flowchart LR
-    Req([Request]) --> M1[Middleware 1]
-    M1 --> M2[Middleware 2]
-    M2 --> M3[Middleware 3 / Endpoint]
-    M3 -. response .-> M2
-    M2 -. response .-> M1
-    M1 -. response .-> Res([Response])
+```text
+          REQUEST  ---------------------------------------->
+  +--------------------------------------------------------------+
+  | Middleware 1  (before next)                                  |
+  |   +------------------------------------------------------+   |
+  |   | Middleware 2  (before next)                          |   |
+  |   |   +----------------------------------------------+   |   |
+  |   |   | Middleware 3 / Endpoint  (generates response) |   |   |
+  |   |   +----------------------------------------------+   |   |
+  |   | Middleware 2  (after next)                           |   |
+  |   +------------------------------------------------------+   |
+  | Middleware 1  (after next)                                   |
+  +--------------------------------------------------------------+
+          <----------------------------------------  RESPONSE
 ```
 
 Code before `await next(context)` runs on the way **in**; code after it runs on the way **out**.
