@@ -197,8 +197,8 @@ Singleton       [#1]------[#1]----------[#1]------[#1]        1 object
 ```
 
 - **Transient:** everyone gets their own new object.
-- **Scoped:** shared inside one request, new for the next request.
-- **Singleton:** shared by everyone, always.
+- **Scoped:** shared inside one request per user /session, new for the next user request.
+- **Singleton:** for each request new instance.
 
 ### When to use which
 
