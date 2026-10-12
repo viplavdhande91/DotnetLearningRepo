@@ -11,9 +11,10 @@ Simple learning notes for ASP.NET Core (.NET 8 and later).
 5. [See Lifetimes in Action](#5-see-lifetimes-in-action)
 6. [The Captive Dependency Trap](#6-the-captive-dependency-trap)
 7. [Handy Registration Tricks](#7-handy-registration-tricks)
-8. [Best Practices and Common Mistakes](#8-best-practices-and-common-mistakes)
-9. [Cheat Sheet](#9-cheat-sheet)
-10. [Practice Exercises](#10-practice-exercises)
+8. [More Concepts Worth Knowing](#8-more-concepts-worth-knowing)
+9. [Best Practices and Common Mistakes](#9-best-practices-and-common-mistakes)
+10. [Cheat Sheet](#10-cheat-sheet)
+11. [Practice Exercises](#11-practice-exercises)
 
 ---
 
@@ -197,8 +198,8 @@ Singleton       [#1]------[#1]----------[#1]------[#1]        1 object
 ```
 
 - **Transient:** everyone gets their own new object.
-- **Scoped:** shared inside one request per user /session, new for the next user request.
-- **Singleton:** for each request new instance.
+- **Scoped:** shared inside one request, new for the next request.
+- **Singleton:** shared by everyone, always.
 
 ### When to use which
 
@@ -397,7 +398,196 @@ builder.Services.AddOrderModule();
 
 ---
 
-## 8. Best Practices and Common Mistakes
+## 8. More Concepts Worth Knowing
+
+### 8.1 DI in a console app (no ASP.NET Core)
+
+DI is not only for web apps. Without a web host, you build the container yourself.
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+services.AddScoped<IMessageSender, EmailSender>();
+services.AddScoped<OrderService>();
+
+using var provider = services.BuildServiceProvider();
+
+// There is no HTTP request, so YOU decide where a scope starts and ends.
+using (var scope = provider.CreateScope())
+{
+    var orders = scope.ServiceProvider.GetRequiredService<OrderService>();
+    orders.PlaceOrder();
+}   // scoped services are disposed here
+```
+
+In a web app, ASP.NET Core opens one scope for every HTTP request. In a console app, a "scope" is whatever you create with `CreateScope()`.
+
+### 8.2 Scoped services in middleware and background services
+
+Two places where people often get stuck:
+
+**Middleware** is created **once**, like a Singleton. So never put a Scoped service in its constructor. Put it in the `InvokeAsync` method instead.
+
+```csharp
+public class LoggingMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public LoggingMiddleware(RequestDelegate next) => _next = next;   // OK: Singleton-like
+
+    public async Task InvokeAsync(HttpContext context, IScopedService scoped)   // OK: scoped here
+    {
+        // use scoped here
+        await _next(context);
+    }
+}
+```
+
+**`BackgroundService`** is registered as a Singleton. If it needs a Scoped service (like `DbContext`), open a scope each time it works:
+
+```csharp
+public class CleanupWorker(IServiceScopeFactory scopeFactory) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            // do the work with db
+            await Task.Delay(TimeSpan.FromMinutes(5), token);
+        }
+    }
+}
+```
+
+### 8.3 Singletons must be thread-safe
+
+Many requests run at the same time, and they all share the same Singleton. Changing its data without protection causes bugs that appear only now and then.
+
+```csharp
+// BAD: two requests can read and write at the same moment
+public class VisitCounter
+{
+    private int _count;
+    public int Increase() => ++_count;
+}
+
+// GOOD: the increase is atomic
+public class VisitCounter
+{
+    private int _count;
+    public int Increase() => Interlocked.Increment(ref _count);
+}
+```
+
+Safe options: keep the Singleton **read-only**, use `lock`, use `Interlocked`, or use thread-safe collections such as `ConcurrentDictionary`.
+
+### 8.4 Transient inside a Singleton is also captive
+
+Section 6 showed Scoped inside Singleton. A Transient has the same problem. The Singleton gets **one** Transient object when it is created and keeps it forever, so it stops behaving like a Transient.
+
+```text
+Singleton (created once)
+    |
+    +--> Transient (created once too, then stuck inside the Singleton)
+```
+
+If the Singleton needs a fresh object each time, inject a factory (`Func<T>`) or use `IServiceScopeFactory`.
+
+### 8.5 Do not use `new HttpClient()`; use `IHttpClientFactory`
+
+Creating `HttpClient` yourself for every call can use up all the network sockets. The factory reuses connections safely.
+
+```csharp
+builder.Services.AddHttpClient<WeatherClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.example.com/");
+});
+
+public class WeatherClient(HttpClient http)    // injected, ready to use
+{
+    public Task<string> GetAsync() => http.GetStringAsync("forecast");
+}
+```
+
+### 8.6 Typed settings with the Options pattern
+
+Instead of reading `IConfiguration` everywhere, map a section of `appsettings.json` to a class.
+
+```csharp
+public class EmailSettings
+{
+    public string Host { get; set; } = "";
+    public int Port { get; set; }
+}
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
+
+public class EmailSender(IOptions<EmailSettings> options)
+{
+    private readonly EmailSettings _settings = options.Value;
+}
+```
+
+| Interface | Lifetime | Picks up changes in the file? |
+|---|---|---|
+| `IOptions<T>` | Singleton | No (read once) |
+| `IOptionsSnapshot<T>` | Scoped | Yes, on each new request |
+| `IOptionsMonitor<T>` | Singleton | Yes, right away |
+
+### 8.7 DI makes testing easy
+
+Because `OrderService` asks for an `IMessageSender`, a test can hand it a fake one. No real email is sent.
+
+```csharp
+public class FakeSender : IMessageSender
+{
+    public List<string> Sent { get; } = new();
+    public void Send(string message) => Sent.Add(message);
+}
+
+[Fact]
+public void PlaceOrder_SendsOneMessage()
+{
+    var fake = new FakeSender();
+    var service = new OrderService(fake);     // no container needed
+
+    service.PlaceOrder();
+
+    Assert.Single(fake.Sent);
+}
+```
+
+### 8.8 Who disposes what?
+
+- Objects the **container creates** are disposed by the container (`IDisposable` and `IAsyncDisposable`).
+- Objects **you create** with `new` and give to the container as a ready-made instance are **not** disposed by it. You must dispose them.
+- Transient objects are disposed when their **scope** ends, not right after use. If you create many Transient `IDisposable` objects inside a long-running scope (like a Singleton or a loop), they pile up in memory until the scope ends.
+
+### 8.9 Constructor injection and the dependency graph
+
+The container builds a whole **tree** of objects, not just one.
+
+```text
+OrderController
+   |
+   +--> OrderService
+           |
+           +--> IOrderRepository --> AppDbContext
+           |
+           +--> IMessageSender   --> EmailSender --> IOptions<EmailSettings>
+```
+
+Two things follow from this:
+
+- If one object in the tree is missing, the whole request fails with "Unable to resolve service".
+- A deep or wide tree is a warning sign. If a class needs too many things, split it into smaller classes.
+
+---
+
+## 9. Best Practices and Common Mistakes
 
 ### Do
 
@@ -439,7 +629,7 @@ It means `OrderService` asked for `IMessageSender`, but you never registered it.
 
 ---
 
-## 9. Cheat Sheet
+## 10. Cheat Sheet
 
 ```text
 Register:   builder.Services.AddXxx<IService, Implementation>();
@@ -462,16 +652,22 @@ Escape hatch:   IServiceScopeFactory.CreateScope()
 | Get all implementations | Inject `IEnumerable<T>` |
 | Pick an implementation by name | `AddKeyedXxx` + `[FromKeyedServices]` |
 | Use a scoped service inside a Singleton | `IServiceScopeFactory` |
+| Use a scoped service in middleware | Inject it into `InvokeAsync`, not the constructor |
+| Use DI in a console app | `ServiceCollection` + `BuildServiceProvider()` |
+| Read typed settings | `IOptions<T>` / `IOptionsSnapshot<T>` / `IOptionsMonitor<T>` |
 
 ---
 
-## 10. Practice Exercises
+## 11. Practice Exercises
 
 1. Build the `/lifetimes` endpoint from section 5 and refresh it a few times. Watch which IDs change.
 2. Create `IMessageSender` with `EmailSender` and `SmsSender`. Switch between them by changing one line in `Program.cs`.
 3. Break it on purpose: make a Singleton depend on a Scoped service, read the error, then fix it with `IServiceScopeFactory`.
 4. Write a unit test for `OrderService` using a fake `IMessageSender`.
 5. Make two services depend on each other, read the error, then remove the loop.
+6. Build a small console app that uses `ServiceCollection` and `BuildServiceProvider` (section 8.1). Resolve a service from two different scopes and compare IDs.
+7. Write a middleware that needs a Scoped service. First inject it in the constructor and watch it fail, then move it to `InvokeAsync` (section 8.2).
+8. Create a Singleton counter. Increase it from many threads with a plain `int`, then with `Interlocked.Increment`, and compare the results (section 8.3).
 
 ---
 
