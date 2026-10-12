@@ -203,8 +203,8 @@ app.Run();
 | Method | Meaning |
 |---|---|
 | `AddTransient<TService, TImpl>()` | New instance **every time** it is requested |
-| `AddScoped<TService, TImpl>()` | One instance **per scope** (per HTTP request in web apps) |
-| `AddSingleton<TService, TImpl>()` | **One instance** for the entire app lifetime |
+| `AddScoped<TService, TImpl>()` | One instance **per scope** (per user /session HTTP request in web apps) |
+| `AddSingleton<TService, TImpl>()` | **One instance** for the each and every HTTP request |
 
 Framework-provided helpers such as `AddControllers()`, `AddDbContext<>()`, `AddHttpClient()` and `AddLogging()` are all just bundles of registrations.
 
